@@ -1,0 +1,48 @@
+# Flutter/Dart/Pub related
+.dart_tool/
+.packages
+.pub/
+build/
+# Web related
+web/generated/
+# IntelliJ related
+*.iml
+.idea/
+# VS Code related
+.vscode/
+# Mac related
+.DS_Store
+# Android related
+android/.gradle/
+android/app/debug/
+android/app/profile/
+android/app/release/
+android/local.properties
+android/.idea/
+# iOS related
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/
+ios/Runner.xcworkspace/
+ios/Runner.xcodeproj/project.xcworkspace/
+ios/Runner.xcodeproj/xcuserdata/
+ios/Flutter/App.framework
+# Symbolication related
+app.*.symbols
+# Miscellaneous
+*.log
+*.tmp
+*.swp
+*.lock
+*.bak
+*.orig
+*.rej
+# Firebase
+firebase_app_id_file.json
+# Coverage
+coverage/
+# Packages
+pubspec.lock
+# Generated files
+*.g.dart
+*.mocks.dart
