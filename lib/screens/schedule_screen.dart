@@ -331,15 +331,15 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   Widget _buildScheduleDialog({Map<String, dynamic>? schedule}) {
     // If schedule is provided, we're editing, otherwise creating new
     final bool isEditing = schedule != null;
-    
+
     // Form controllers
     final labelController = TextEditingController(text: isEditing ? schedule!['label'] : '');
     final portionController = TextEditingController(text: isEditing ? schedule!['portion'].toString() : '30');
-    
+
     // Time and days
     TimeOfDay selectedTime = isEditing ? schedule!['time'] : const TimeOfDay(hour: 12, minute: 0);
     List<bool> selectedDays = isEditing ? List<bool>.from(schedule!['days']) : List.filled(7, true);
-    
+
     return StatefulBuilder(
       builder: (context, setState) {
         return AlertDialog(
@@ -358,7 +358,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Time picker
                 const Text('Feeding Time', style: TextStyle(fontSize: 14, color: Colors.grey)),
                 const SizedBox(height: 8),
@@ -393,7 +393,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Days selection
                 const Text('Repeat on Days', style: TextStyle(fontSize: 14, color: Colors.grey)),
                 const SizedBox(height: 8),
@@ -427,7 +427,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   }),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Portion size
                 TextField(
                   controller: portionController,
@@ -454,21 +454,21 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   );
                   return;
                 }
-                
+
                 if (portionController.text.isEmpty || int.tryParse(portionController.text) == null) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Please enter a valid portion size')),
                   );
                   return;
                 }
-                
+
                 if (!selectedDays.contains(true)) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Please select at least one day')),
                   );
                   return;
                 }
-                
+
                 // Create or update schedule
                 final newSchedule = {
                   'id': isEditing ? schedule!['id'] : DateTime.now().millisecondsSinceEpoch,
@@ -478,7 +478,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   'active': isEditing ? schedule!['active'] : true,
                   'label': labelController.text,
                 };
-                
+
                 setState(() {
                   if (isEditing) {
                     final index = _schedules.indexWhere((s) => s['id'] == schedule!['id']);
@@ -489,7 +489,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     _schedules.add(newSchedule);
                   }
                 });
-                
+
                 Navigator.pop(context);
               },
               child: Text(isEditing ? 'Update' : 'Add'),

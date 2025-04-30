@@ -14,7 +14,7 @@ class MyApp extends StatelessWidget {
       title: 'Pet Feeder App',
       // Use onGenerateRoute for dynamic route generation
       onGenerateRoute: AppRoutes.generateRoute,
-      initialRoute: AppRoutes.login, // Set the initial route
+      initialRoute: AppRoutes.dashboard, // Set the initial route
       theme: ThemeData(
         brightness: Brightness.light,
         primaryColor: Colors.black,
