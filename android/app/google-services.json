@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "636449180603",
+    "project_id": "pet-feeding-app",
+    "storage_bucket": "pet-feeding-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:636449180603:android:90757128f361147594d29e",
+        "android_client_info": {
+          "package_name": "com.example.pet_feeder_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAnfGty1uwH8YXVuWiIoOqCBvd0TeevzQI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

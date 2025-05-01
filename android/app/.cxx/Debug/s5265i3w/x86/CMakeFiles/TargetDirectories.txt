@@ -1,0 +1,2 @@
+C:/Users/alire/Desktop/pet-feeding/android/app/.cxx/Debug/s5265i3w/x86/CMakeFiles/edit_cache.dir
+C:/Users/alire/Desktop/pet-feeding/android/app/.cxx/Debug/s5265i3w/x86/CMakeFiles/rebuild_cache.dir
