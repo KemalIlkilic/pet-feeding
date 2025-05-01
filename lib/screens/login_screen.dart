@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pet_feeder_app/routes.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // ✅ Added import
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -20,13 +21,22 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _signIn() {
+  void _signIn() async {
     if (_formKey.currentState!.validate()) {
-      // TODO: Implement sign-in logic
-      print('Email: ${_emailController.text}');
-      print('Password: ${_passwordController.text}');
-      // Navigate to dashboard or show error
-      Navigator.pushNamedAndRemoveUntil(context, AppRoutes.dashboard, (route) => false);
+      try {
+        final userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim(),
+        );
+        print('Login successful: ${userCredential.user?.email}');
+        // Navigate to dashboard
+        Navigator.pushNamedAndRemoveUntil(context, AppRoutes.dashboard, (route) => false);
+      } catch (e) {
+        print('Login failed: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Login failed: $e')),
+        );
+      }
     }
   }
 
@@ -154,7 +164,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 30),
                     // Social Login Buttons
                     OutlinedButton.icon(
-                      icon: const Text('G', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)), // Placeholder for Google icon
+                      icon: const Text('G', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
                       label: const Text('Continue with Google', style: TextStyle(color: Colors.black)),
                       onPressed: _signInWithGoogle,
                       style: OutlinedButton.styleFrom(
@@ -164,7 +174,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 15),
                     OutlinedButton.icon(
-                      icon: const Text('f', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)), // Placeholder for Facebook icon
+                      icon: const Text('f', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
                       label: const Text('Continue with Facebook', style: TextStyle(color: Colors.black)),
                       onPressed: _signInWithFacebook,
                       style: OutlinedButton.styleFrom(
@@ -201,4 +211,3 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
-

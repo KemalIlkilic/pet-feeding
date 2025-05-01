@@ -48,6 +48,7 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutterVersionCode.toInteger()
         versionName = flutterVersionName
+        minSdk = 23
     }
 
     buildTypes {
@@ -67,3 +68,5 @@ dependencies {
     implementation platform('com.google.firebase:firebase-bom:33.13.0')
     implementation 'com.google.firebase:firebase-analytics'
 }
+
+apply plugin: 'com.google.gms.google-services'

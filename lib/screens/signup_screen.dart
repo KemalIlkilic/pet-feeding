@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pet_feeder_app/routes.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // ✅ Added
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -25,7 +26,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     super.dispose();
   }
 
-  void _createAccount() {
+  void _createAccount() async {
     if (_formKey.currentState!.validate()) {
       if (!_agreeToTerms) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -33,13 +34,21 @@ class _SignUpScreenState extends State<SignUpScreen> {
         );
         return;
       }
-      // TODO: Implement account creation logic
-      print('Name: ${_nameController.text}');
-      print('Email: ${_emailController.text}');
-      print('Password: ${_passwordController.text}');
-      print('Agreed to terms: $_agreeToTerms');
-      // Navigate to dashboard or show error
-      Navigator.pushNamedAndRemoveUntil(context, AppRoutes.dashboard, (route) => false);
+
+      try {
+        final userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim(),
+        );
+        print('Signup successful: ${userCredential.user?.email}');
+        // Navigate to dashboard
+        Navigator.pushNamedAndRemoveUntil(context, AppRoutes.dashboard, (route) => false);
+      } catch (e) {
+        print('Signup failed: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Signup failed: $e')),
+        );
+      }
     }
   }
 
@@ -207,13 +216,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 TextSpan(
                                   text: 'Terms of Service',
                                   style: const TextStyle(color: Colors.black, decoration: TextDecoration.underline),
-                                  // TODO: Add recognizer to navigate to Terms page
                                 ),
                                 const TextSpan(text: ' and '),
                                 TextSpan(
                                   text: 'Privacy Policy',
                                   style: const TextStyle(color: Colors.black, decoration: TextDecoration.underline),
-                                  // TODO: Add recognizer to navigate to Privacy Policy page
                                 ),
                               ],
                             ),
@@ -226,7 +233,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     ElevatedButton(
                       onPressed: _createAccount,
                       style: ElevatedButton.styleFrom(
-                        minimumSize: const Size(double.infinity, 50), // Full width
+                        minimumSize: const Size(double.infinity, 50),
                       ),
                       child: const Text('Create Account'),
                     ),
@@ -245,7 +252,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     const SizedBox(height: 30),
                     // Social Login Buttons
                     OutlinedButton.icon(
-                      icon: const Text('G', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)), // Placeholder for Google icon
+                      icon: const Text('G', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
                       label: const Text('Continue with Google', style: TextStyle(color: Colors.black)),
                       onPressed: _signInWithGoogle,
                       style: OutlinedButton.styleFrom(
@@ -255,7 +262,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     ),
                     const SizedBox(height: 15),
                     OutlinedButton.icon(
-                      icon: const Text('f', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)), // Placeholder for Facebook icon
+                      icon: const Text('f', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
                       label: const Text('Continue with Facebook', style: TextStyle(color: Colors.black)),
                       onPressed: _signInWithFacebook,
                       style: OutlinedButton.styleFrom(
@@ -292,4 +299,3 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 }
-
