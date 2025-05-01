@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "636449180603",
+    "firebase_url": "https://pet-feeding-app-default-rtdb.firebaseio.com",
     "project_id": "pet-feeding-app",
     "storage_bucket": "pet-feeding-app.firebasestorage.app"
   },
@@ -12,7 +13,20 @@
           "package_name": "com.example.pet_feeder_app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "636449180603-ko9nmg29bgtppvj8uqfhb421rlrgsbdj.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.pet_feeder_app",
+            "certificate_hash": "6dbc1da21ac0e74d7d063a1d6044b36c36a7a87b"
+          }
+        },
+        {
+          "client_id": "636449180603-tn922uq5d6tb06fqaaaaspfidg6s2rp1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAnfGty1uwH8YXVuWiIoOqCBvd0TeevzQI"
@@ -20,7 +34,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "636449180603-tn922uq5d6tb06fqaaaaspfidg6s2rp1.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "636449180603-82tv4ej8as6ghbeon48vacuato3n99ip.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.petFeederApp"
+              }
+            }
+          ]
         }
       }
     }

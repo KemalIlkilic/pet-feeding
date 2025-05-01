@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pet_feeder_app/routes.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // ✅ Added
+import 'package:google_sign_in/google_sign_in.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -63,9 +64,38 @@ class _SignUpScreenState extends State<SignUpScreen> {
     }
   }
 
-  void _signInWithGoogle() {
-    print('Sign in with Google clicked');
+  void _signInWithGoogle() async {
+  try {
+    final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+    if (googleUser == null) return; // user canceled
+
+    final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+
+    final credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
+
+    final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+    final uid = userCredential.user!.uid;
+
+    // Save user info to Firestore (optional if not already there)
+    await FirebaseFirestore.instance.collection('users').doc(uid).set({
+      'fullName': userCredential.user?.displayName ?? '',
+      'email': userCredential.user?.email ?? '',
+      'createdAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true)); // use merge to avoid overwriting if exists
+
+    print('Google sign-in successful: ${userCredential.user?.email}');
+
+    Navigator.pushNamedAndRemoveUntil(context, AppRoutes.dashboard, (route) => false);
+  } catch (e) {
+    print('Google sign-in failed: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Google sign-in failed: $e')),
+    );
   }
+}
 
   void _signInWithFacebook() {
     print('Sign in with Facebook clicked');
