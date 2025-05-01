@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pet_feeder_app/routes.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // ✅ Added
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // ✅ Added
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -40,9 +41,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
         );
-        print('Signup successful: ${userCredential.user?.email}');
-        // Navigate to dashboard
-        Navigator.pushNamedAndRemoveUntil(context, AppRoutes.dashboard, (route) => false);
+
+        final uid = userCredential.user!.uid;
+
+        // ✅ Save user data to Firestore
+        await FirebaseFirestore.instance.collection('users').doc(uid).set({
+          'fullName': _nameController.text.trim(),
+          'email': _emailController.text.trim(),
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+
+        print('Signup + Firestore success for: ${userCredential.user?.email}');
+
+        Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (route) => false);
       } catch (e) {
         print('Signup failed: $e');
         ScaffoldMessenger.of(context).showSnackBar(
@@ -53,19 +64,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   void _signInWithGoogle() {
-    // TODO: Implement Google sign-in logic
     print('Sign in with Google clicked');
   }
 
   void _signInWithFacebook() {
-    // TODO: Implement Facebook sign-in logic
     print('Sign in with Facebook clicked');
   }
 
   void _navigateToSignIn() {
-    // TODO: Implement navigation to Sign In screen
     print('Navigate to Sign In clicked');
-    Navigator.pop(context); // Assuming SignUp is pushed onto Login
+    Navigator.pop(context);
   }
 
   @override
@@ -83,7 +91,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // Back Button
                     Align(
                       alignment: Alignment.topLeft,
                       child: IconButton(
@@ -92,7 +99,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    // Logo
                     Container(
                       width: 80,
                       height: 80,
@@ -113,7 +119,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 20),
-                    // Full Name Field
                     TextFormField(
                       controller: _nameController,
                       decoration: const InputDecoration(
@@ -129,7 +134,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       },
                     ),
                     const SizedBox(height: 20),
-                    // Email Field
                     TextFormField(
                       controller: _emailController,
                       decoration: const InputDecoration(
@@ -149,7 +153,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       },
                     ),
                     const SizedBox(height: 20),
-                    // Password Field
                     TextFormField(
                       controller: _passwordController,
                       decoration: const InputDecoration(
@@ -169,7 +172,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       },
                     ),
                     const SizedBox(height: 20),
-                    // Confirm Password Field
                     TextFormField(
                       controller: _confirmPasswordController,
                       decoration: const InputDecoration(
@@ -189,7 +191,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       },
                     ),
                     const SizedBox(height: 20),
-                    // Terms Checkbox
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -229,7 +230,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ],
                     ),
                     const SizedBox(height: 20),
-                    // Create Account Button
                     ElevatedButton(
                       onPressed: _createAccount,
                       style: ElevatedButton.styleFrom(
@@ -238,7 +238,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       child: const Text('Create Account'),
                     ),
                     const SizedBox(height: 30),
-                    // Divider
                     const Row(
                       children: [
                         Expanded(child: Divider(thickness: 1)),
@@ -250,7 +249,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ],
                     ),
                     const SizedBox(height: 30),
-                    // Social Login Buttons
                     OutlinedButton.icon(
                       icon: const Text('G', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
                       label: const Text('Continue with Google', style: TextStyle(color: Colors.black)),
@@ -271,7 +269,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                     ),
                     const SizedBox(height: 40),
-                    // Sign In Link
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
