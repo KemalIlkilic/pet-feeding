@@ -179,14 +179,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         side: const BorderSide(color: Colors.grey),
                       ),
                     ),
-                    const SizedBox(height: 15),
-                    OutlinedButton.icon(
-                      icon: const Text('f', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
-                      label: const Text('Continue with Facebook', style: TextStyle(color: Colors.black)),
-                      onPressed: _signInWithFacebook,
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size(double.infinity, 50),
-                        side: const BorderSide(color: Colors.grey),
+                   const SizedBox(height: 15),
+                   OutlinedButton.icon(
+                    icon: const Icon(Icons.apple, color: Colors.black),
+                    label: const Text('Continue with Apple ID', style: TextStyle(color: Colors.black)),
+                    onPressed: _signInWithFacebook, // Placeholder for now
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(double.infinity, 50),
+                      side: const BorderSide(color: Colors.grey),
                       ),
                     ),
                     const SizedBox(height: 40),
