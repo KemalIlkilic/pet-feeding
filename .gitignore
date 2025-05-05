@@ -46,3 +46,5 @@ pubspec.lock
 # Generated files
 *.g.dart
 *.mocks.dart
+
+android/app

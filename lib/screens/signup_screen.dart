@@ -65,37 +65,37 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   void _signInWithGoogle() async {
-  try {
-    final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-    if (googleUser == null) return; // user canceled
+    try {
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      if (googleUser == null) return; // user canceled
 
-    final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
 
-    final credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
-    );
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
 
-    final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
-    final uid = userCredential.user!.uid;
+      final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+      final uid = userCredential.user!.uid;
 
-    // Save user info to Firestore (optional if not already there)
-    await FirebaseFirestore.instance.collection('users').doc(uid).set({
-      'fullName': userCredential.user?.displayName ?? '',
-      'email': userCredential.user?.email ?? '',
-      'createdAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true)); // use merge to avoid overwriting if exists
+      // Save user info to Firestore (optional if not already there)
+      await FirebaseFirestore.instance.collection('users').doc(uid).set({
+        'fullName': userCredential.user?.displayName ?? '',
+        'email': userCredential.user?.email ?? '',
+        'createdAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true)); // use merge to avoid overwriting if exists
 
-    print('Google sign-in successful: ${userCredential.user?.email}');
+      print('Google sign-in successful: ${userCredential.user?.email}');
 
-    Navigator.pushNamedAndRemoveUntil(context, AppRoutes.dashboard, (route) => false);
-  } catch (e) {
-    print('Google sign-in failed: $e');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Google sign-in failed: $e')),
-    );
+      Navigator.pushNamedAndRemoveUntil(context, AppRoutes.dashboard, (route) => false);
+    } catch (e) {
+      print('Google sign-in failed: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Google sign-in failed: $e')),
+      );
+    }
   }
-}
 
   void _signInWithFacebook() {
     print('Sign in with Facebook clicked');
