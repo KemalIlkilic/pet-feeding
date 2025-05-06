@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:pet_feeder_app/routes.dart';
 
 class ScheduleScreen extends StatefulWidget {
   const ScheduleScreen({super.key});

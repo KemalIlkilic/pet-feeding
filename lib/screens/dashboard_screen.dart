@@ -11,7 +11,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedIndex = 0;
   String _selectedPet = 'Whiskers'; // Default selected pet
-  
+
   // Mock data for pet selection
   final List<Map<String, dynamic>> _pets = [
     {'name': 'Whiskers', 'type': 'Cat', 'icon': '🐱'},
@@ -26,14 +26,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     'portion': '1 portion',
   };
 
-  // Mock data for food level
-  final double _foodLevel = 0.65; // 65% full
-
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
-    
+
     // Navigate to different screens based on bottom nav selection
     switch (index) {
       case 0:
@@ -89,11 +86,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: Text(
                   'Welcome, User!',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
               ),
-              
+
               // Pet selection
               const SizedBox(height: 16),
               const Text(
@@ -112,7 +109,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   itemBuilder: (context, index) {
                     final pet = _pets[index];
                     final isSelected = pet['name'] == _selectedPet;
-                    
+
                     return GestureDetector(
                       onTap: () {
                         setState(() {
@@ -125,9 +122,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(10),
-                          border: isSelected 
-                            ? Border.all(color: Colors.black, width: 2)
-                            : null,
+                          border: isSelected ? Border.all(color: Colors.black, width: 2) : null,
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withOpacity(0.1),
@@ -169,7 +164,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   },
                 ),
               ),
-              
+
               // Next feeding card
               const SizedBox(height: 24),
               Card(
@@ -243,8 +238,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
               ),
-              
-              // Food level card
+
+              // Go Live section (replacing Food level card)
               const SizedBox(height: 16),
               Card(
                 elevation: 2,
@@ -252,78 +247,70 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(20.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Food Level',
+                        'Live Monitoring',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Container(
-                            width: 60,
-                            height: 60,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[200],
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Center(
-                              child: Text(
-                                '🍚',
-                                style: TextStyle(fontSize: 30),
+                      const SizedBox(height: 20),
+                      Center(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            // Logic to be added later
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Live monitoring feature coming soon!'),
                               ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue[800],
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 40,
+                              vertical: 16,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
                             ),
                           ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '${(_foodLevel * 100).toInt()}% Full',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.videocam),
+                              const SizedBox(width: 10),
+                              const Text(
+                                'Go Live',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
                                 ),
-                                const SizedBox(height: 8),
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(10),
-                                  child: LinearProgressIndicator(
-                                    value: _foodLevel,
-                                    backgroundColor: Colors.grey[300],
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      _foodLevel > 0.2 ? Colors.black : Colors.red,
-                                    ),
-                                    minHeight: 10,
-                                  ),
-                                ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
-                      const SizedBox(height: 16),
-                      Text(
-                        _foodLevel > 0.2 
-                            ? 'Food level is good'
-                            : 'Food level is low, please refill soon',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: _foodLevel > 0.2 ? Colors.green[700] : Colors.red,
+                      const SizedBox(height: 10),
+                      const Center(
+                        child: Text(
+                          'Monitor your pet in real-time',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey,
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-              
+
               // Quick actions
               const SizedBox(height: 24),
               const Text(
@@ -363,7 +350,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ],
               ),
-              
+
               // Recent activity
               const SizedBox(height: 24),
               Row(
@@ -440,7 +427,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
   }
-  
+
   Widget _buildQuickActionButton({
     required IconData icon,
     required String label,
@@ -475,7 +462,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
   }
-  
+
   Widget _buildActivityItem({
     required IconData icon,
     required String title,
