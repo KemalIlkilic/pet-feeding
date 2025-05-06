@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pet_feeder_app/routes.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -10,12 +12,11 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController(text: 'User Name'); // Mock data
-  final _emailController = TextEditingController(text: 'user@example.com'); // Mock data
-  final _phoneController = TextEditingController(text: '+1 123 456 7890'); // Mock data
+  final _nameController = TextEditingController(text: 'User Name');
+  final _emailController = TextEditingController(text: 'user@example.com');
+  final _phoneController = TextEditingController(text: '+0 00 000 0000');
   bool _isEditing = false;
 
-  // Mock pet data
   final List<Map<String, dynamic>> _pets = [
     {'name': 'Whiskers', 'type': 'Cat', 'icon': '🐱'},
     {'name': 'Buddy', 'type': 'Dog', 'icon': '🐶'},
@@ -37,12 +38,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _saveProfile() {
     if (_formKey.currentState!.validate()) {
-      // TODO: Implement profile saving logic
       print('Saving profile...');
       print('Name: ${_nameController.text}');
       print('Email: ${_emailController.text}');
       print('Phone: ${_phoneController.text}');
-      _toggleEdit(); // Exit edit mode after saving
+      _toggleEdit();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Profile saved successfully')),
       );
@@ -50,14 +50,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _navigateToPetProfile(String petName) {
-    // Pass pet name or ID to the pet profile screen
     Navigator.pushNamed(context, AppRoutes.petProfile, arguments: petName);
   }
 
   void _addPet() {
-    // TODO: Implement logic to add a new pet
     print('Add new pet clicked');
-    // Maybe navigate to a dedicated Add Pet screen or show a dialog
   }
 
   @override
@@ -82,7 +79,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // User Photo and Name
               Center(
                 child: Column(
                   children: [
@@ -92,7 +88,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           radius: 60,
                           backgroundColor: Colors.grey[300],
                           child: const Icon(Icons.person, size: 60, color: Colors.grey),
-                          // TODO: Add image loading/selection
                         ),
                         if (_isEditing)
                           Positioned(
@@ -103,7 +98,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               backgroundColor: Colors.black,
                               child: IconButton(
                                 icon: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
-                                onPressed: () { /* TODO: Implement photo upload */ },
+                                onPressed: () {},
                               ),
                             ),
                           ),
@@ -112,14 +107,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(height: 10),
                     _isEditing
                         ? SizedBox(
-                            width: 200, // Limit width for better appearance
+                            width: 200,
                             child: TextFormField(
                               controller: _nameController,
                               textAlign: TextAlign.center,
                               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                               decoration: const InputDecoration(
                                 hintText: 'Enter your name',
-                                border: InputBorder.none, // No border in edit mode for name
+                                border: InputBorder.none,
                               ),
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
@@ -137,12 +132,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               const SizedBox(height: 30),
-
-              // User Information Section
-              const Text(
-                'Account Information',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
+              const Text('Account Information', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 15),
               _buildInfoField(
                 label: 'Full Name',
@@ -178,7 +168,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 isEditing: _isEditing,
                 keyboardType: TextInputType.phone,
                 validator: (value) {
-                  // Basic validation, can be improved
                   if (value == null || value.isEmpty) {
                     return 'Please enter your phone number';
                   }
@@ -186,16 +175,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 },
               ),
               const SizedBox(height: 30),
-
-              // Pet Management Section
-              const Text(
-                'My Pets',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
+              const Text('My Pets', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 15),
               ListView.builder(
                 shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(), // Disable scrolling within the list
+                physics: const NeverScrollableScrollPhysics(),
                 itemCount: _pets.length,
                 itemBuilder: (context, index) {
                   final pet = _pets[index];
@@ -227,27 +211,56 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               const SizedBox(height: 30),
-
-              // Account Actions
-              const Text(
-                'Account Actions',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
+              const Text('Account Actions', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 15),
               ListTile(
                 leading: const Icon(Icons.logout, color: Colors.red),
                 title: const Text('Logout', style: TextStyle(color: Colors.red)),
                 onTap: () {
-                  // TODO: Implement logout logic
                   Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (route) => false);
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.delete_forever, color: Colors.red),
                 title: const Text('Delete Account', style: TextStyle(color: Colors.red)),
-                onTap: () {
-                  // TODO: Implement account deletion logic
-                  print('Delete account clicked');
+                onTap: () async {
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Delete Account'),
+                      content: const Text('Are you sure you want to delete your account? This action cannot be undone.'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                        ),
+                      ],
+                    ),
+                  );
+
+                  if (confirmed == true) {
+                    try {
+                      final user = FirebaseAuth.instance.currentUser;
+
+                      if (user != null) {
+                        await FirebaseFirestore.instance.collection('users').doc(user.uid).delete();
+                        await user.delete();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Account deleted successfully')),
+                        );
+                        Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (route) => false);
+                      }
+                    } catch (e) {
+                      print('Delete failed: $e');
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Failed to delete account: $e')),
+                      );
+                    }
+                  }
                 },
               ),
             ],
@@ -267,10 +280,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-        ),
+        Text(label, style: TextStyle(fontSize: 14, color: Colors.grey[600])),
         const SizedBox(height: 5),
         isEditing
             ? TextFormField(
@@ -289,13 +299,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   color: Colors.grey[100],
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Text(
-                  controller.text,
-                  style: const TextStyle(fontSize: 16),
-                ),
+                child: Text(controller.text, style: const TextStyle(fontSize: 16)),
               ),
       ],
     );
   }
 }
-
