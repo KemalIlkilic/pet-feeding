@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async'; // For Timer
+import 'package:firebase_database/firebase_database.dart'; // ✅ NEW
 
 class ManualFeedScreen extends StatefulWidget {
   const ManualFeedScreen({super.key});
@@ -18,13 +19,22 @@ class _ManualFeedScreenState extends State<ManualFeedScreen> {
   bool _isFeeding = false;
   String? _lastFeedTime;
 
-  void _feedNow() {
+  final databaseRef = FirebaseDatabase.instance.ref(); // ✅ NEW
+
+  void _feedNow() async {
     if (_isFeeding) return;
 
     setState(() {
       _isFeeding = true;
       _statusMessage = 'Dispensing ${_selectedPortion.toInt()}g...';
     });
+
+    // ✅ Send the feed command to Firebase Realtime DB
+    try {
+      await databaseRef.child('commands').update({'feedNow': true});
+    } catch (e) {
+      print('Failed to send command: $e');
+    }
 
     // Simulate feeding process
     Timer(const Duration(seconds: 3), () {
@@ -33,9 +43,8 @@ class _ManualFeedScreenState extends State<ManualFeedScreen> {
         _statusMessage = 'Successfully dispensed ${_selectedPortion.toInt()}g';
         _lastFeedTime = TimeOfDay.now().format(context);
       });
-      // Reset status message after a few seconds
       Timer(const Duration(seconds: 5), () {
-        if (mounted) { // Check if the widget is still in the tree
+        if (mounted) {
           setState(() {
             _statusMessage = 'Ready to feed';
           });
@@ -57,7 +66,8 @@ class _ManualFeedScreenState extends State<ManualFeedScreen> {
           children: [
             // Pet selection
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
               decoration: BoxDecoration(
                 color: Colors.grey[100],
                 borderRadius: BorderRadius.circular(8),
@@ -133,13 +143,17 @@ class _ManualFeedScreenState extends State<ManualFeedScreen> {
             const SizedBox(height: 10),
             Text(
               '${_selectedPortion.toInt()} g',
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
+              style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black),
             ),
             Slider(
               value: _selectedPortion,
               min: _minPortion,
               max: _maxPortion,
-              divisions: ((_maxPortion - _minPortion) / 5).toInt(), // Steps of 5g
+              divisions:
+                  ((_maxPortion - _minPortion) / 5).toInt(), // Steps of 5g
               label: '${_selectedPortion.round()} g',
               onChanged: (double value) {
                 setState(() {
@@ -154,13 +168,18 @@ class _ManualFeedScreenState extends State<ManualFeedScreen> {
             // Feed Now Button
             ElevatedButton.icon(
               icon: _isFeeding
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white))
                   : const Icon(Icons.restaurant, color: Colors.white),
               label: Text(_isFeeding ? 'Feeding...' : 'Feed Now'),
               onPressed: _isFeeding ? null : _feedNow,
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 60),
-                textStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                textStyle:
+                    const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(30),
                 ),
@@ -173,12 +192,16 @@ class _ManualFeedScreenState extends State<ManualFeedScreen> {
               _statusMessage,
               style: TextStyle(
                 fontSize: 16,
-                color: _isFeeding ? Colors.blue : (_statusMessage.startsWith('Success') ? Colors.green[700] : Colors.grey[700]),
+                color: _isFeeding
+                    ? Colors.blue
+                    : (_statusMessage.startsWith('Success')
+                        ? Colors.green[700]
+                        : Colors.grey[700]),
                 fontWeight: FontWeight.bold,
               ),
               textAlign: TextAlign.center,
             ),
-            const Spacer(), // Pushes the last feed time to the bottom
+            const Spacer(),
 
             // Last Feed Time
             if (_lastFeedTime != null)
@@ -195,4 +218,3 @@ class _ManualFeedScreenState extends State<ManualFeedScreen> {
     );
   }
 }
-
