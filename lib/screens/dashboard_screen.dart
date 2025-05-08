@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:pet_feeder_app/routes.dart';
 
@@ -327,8 +329,49 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   _buildQuickActionButton(
                     icon: Icons.pets,
                     label: 'Pet Profile',
-                    onTap: _navigateToPetProfile,
+                    onTap: () async {
+                      final user = FirebaseAuth.instance.currentUser;
+
+                      if (user == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('User not logged in')),
+                        );
+                        return;
+                      }
+
+                      try {
+                        final snapshot = await FirebaseFirestore.instance
+                            .collection('pets')
+                            .where('updatedBy', isEqualTo: user.uid)
+                            .limit(1)
+                            .get();
+
+                        if (snapshot.docs.isNotEmpty) {
+                          final petName = snapshot.docs.first.data()['name'];
+                          if (petName != null && petName.toString().isNotEmpty) {
+                            Navigator.pushNamed(
+                              context,
+                              AppRoutes.petProfile,
+                              arguments: petName,
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Pet name is missing in Firestore')),
+                            );
+                          }
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('No pets found for this user')),
+                          );
+                        }
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Error loading pet: $e')),
+                        );
+                      }
+                    },
                   ),
+
                   _buildQuickActionButton(
                     icon: Icons.restaurant,
                     label: 'Feed Now',

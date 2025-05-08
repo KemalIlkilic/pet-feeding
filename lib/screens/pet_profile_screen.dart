@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 
 class PetProfileScreen extends StatefulWidget {
   final String? petName; // Argument passed from ProfileScreen
@@ -14,6 +17,8 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
   bool _isEditingBasicInfo = false;
   bool _isEditingFeedingPrefs = false;
   bool _isEditingHealthMetrics = false;
+  bool _isLoading = true;
+
 
   // Mock data - replace with actual data fetching based on widget.petName
   final _nameController = TextEditingController(text: 'Whiskers');
@@ -37,10 +42,10 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
     super.initState();
     // If petName is provided, load the actual pet data
     if (widget.petName != null) {
-      // TODO: Load pet data based on widget.petName
-      print("Loading data for pet: ${widget.petName}");
-      // For now, we use mock data regardless
-      _nameController.text = widget.petName ?? 'Whiskers';
+  print("Loading data for pet: ${widget.petName}");
+  print("🐾 widget.petName: ${widget.petName}");
+
+  _loadPetData(); // 🔥 this fetches the data from Firestore
     }
   }
 
@@ -80,27 +85,106 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
     });
   }
 
-  void _saveChanges() {
-    if (_formKey.currentState!.validate()) {
-      // TODO: Implement saving logic for all sections
-      print('Saving pet profile changes...');
+  void _saveChanges() async {
+  if (_formKey.currentState!.validate()) {
+    try {
+      await _saveToFirestore();
+
       setState(() {
         _isEditingBasicInfo = false;
         _isEditingFeedingPrefs = false;
         _isEditingHealthMetrics = false;
       });
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pet profile saved successfully')),
+        const SnackBar(content: Text('Pet profile saved to Firestore')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to save profile: $e')),
       );
     }
   }
+}
+
+  Future<void> _saveToFirestore() async {
+  final user = FirebaseAuth.instance.currentUser;
+
+  final docId = widget.petName ?? _nameController.text;
+  final petDoc = FirebaseFirestore.instance.collection('pets').doc(docId);
+
+  await petDoc.set({
+    'name': _nameController.text,
+    'age': _ageController.text,
+    'type': _typeController.text,
+    'breed': _breedController.text,
+    'weight': _weightController.text,
+    'gender': _genderController.text,
+    'foodType': _foodTypeController.text,
+    'dailyPortions': _dailyPortionsController.text,
+    'portionSize': _portionSizeController.text,
+    'specialDiet': _specialDietController.text,
+    'weightTrend': _weightTrendController.text,
+    'consumption': _consumptionController.text,
+    'vetVisit': _vetVisitController.text,
+    'updatedBy': user?.uid ?? "anonymous",
+    'updatedAt': FieldValue.serverTimestamp(),
+  });
+}
+
+Future<void> _loadPetData() async {
+  try {
+    if (widget.petName == null) {
+      print("⚠️ widget.petName is null");
+      setState(() => _isLoading = false);
+      return;
+    }
+
+    final doc = await FirebaseFirestore.instance
+        .collection('pets')
+        .doc(widget.petName)
+        .get();
+
+    if (doc.exists) {
+      final data = doc.data()!;
+      _nameController.text = data['name'] ?? '';
+      _ageController.text = data['age'] ?? '';
+      _typeController.text = data['type'] ?? '';
+      _breedController.text = data['breed'] ?? '';
+      _weightController.text = data['weight'] ?? '';
+      _genderController.text = data['gender'] ?? '';
+      _foodTypeController.text = data['foodType'] ?? '';
+      _dailyPortionsController.text = data['dailyPortions'] ?? '';
+      _portionSizeController.text = data['portionSize'] ?? '';
+      _specialDietController.text = data['specialDiet'] ?? '';
+      _weightTrendController.text = data['weightTrend'] ?? '';
+      _consumptionController.text = data['consumption'] ?? '';
+      _vetVisitController.text = data['vetVisit'] ?? '';
+    } else {
+      print("⚠️ No document found for: ${widget.petName}");
+    }
+  } catch (e) {
+    print("🔥 Error loading pet data: $e");
+  }
+
+  setState(() {
+    _isLoading = false; // Always clear loading
+  });
+}
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('${_nameController.text}\'s Profile'),
-      ),
+Widget build(BuildContext context) {
+  if (_isLoading) {
+    return const Scaffold(
+      body: Center(child: CircularProgressIndicator()),
+    );
+  }
+
+  return Scaffold(
+    appBar: AppBar(
+      title: Text('${_nameController.text}\'s Profile'),
+    ),
+
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
         child: Form(
