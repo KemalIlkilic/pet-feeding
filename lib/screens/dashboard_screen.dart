@@ -12,16 +12,31 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedIndex = 0;
-  String _selectedPet = 'Whiskers'; // Default selected pet
+  String _selectedPet = ''; // loaded from Firestore
 
-  // Mock data for pet selection
-  final List<Map<String, dynamic>> _pets = [
-    {'name': 'Whiskers', 'type': 'Cat', 'icon': '🐱'},
-    {'name': 'Buddy', 'type': 'Dog', 'icon': '🐶'},
-    {'name': 'Hoppy', 'type': 'Rabbit', 'icon': '🐰'},
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadUserPet(); // initial pet load
+  }
 
-  // Mock data for next feeding
+  void _loadUserPet() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final snapshot = await FirebaseFirestore.instance
+        .collection('pets')
+        .where('updatedBy', isEqualTo: user.uid)
+        .limit(1)
+        .get();
+
+    if (snapshot.docs.isNotEmpty) {
+      setState(() {
+        _selectedPet = snapshot.docs.first.data()['name'] ?? '';
+      });
+    }
+  }
+
   final Map<String, dynamic> _nextFeeding = {
     'time': '6:30 PM',
     'type': 'Dinner',
@@ -33,11 +48,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _selectedIndex = index;
     });
 
-    // Navigate to different screens based on bottom nav selection
     switch (index) {
-      case 0:
-        // Already on dashboard
-        break;
       case 1:
         Navigator.pushNamed(context, AppRoutes.schedule);
         break;
@@ -55,7 +66,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _navigateToPetProfile() {
-    Navigator.pushNamed(context, AppRoutes.petProfile);
+    Navigator.pushNamed(context, AppRoutes.petProfile, arguments: _selectedPet);
   }
 
   void _navigateToManualFeed() {
@@ -68,7 +79,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
         title: const Text('Dashboard'),
-        automaticallyImplyLeading: false, // Remove back button
+        automaticallyImplyLeading: false,
         actions: [
           IconButton(
             icon: const Icon(Icons.person),
@@ -82,380 +93,115 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Welcome message
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
                 child: Text(
                   'Welcome, User!',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ),
-
-              // Pet selection
               const SizedBox(height: 16),
-              const Text(
-                'Select Pet',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              const Text('Select Pet', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              SizedBox(
-                height: 110,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _pets.length,
-                  itemBuilder: (context, index) {
-                    final pet = _pets[index];
-                    final isSelected = pet['name'] == _selectedPet;
+              StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('pets')
+                    .where('updatedBy', isEqualTo: FirebaseAuth.instance.currentUser?.uid)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) return const CircularProgressIndicator();
 
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _selectedPet = pet['name'];
-                        });
-                      },
-                      child: Container(
-                        width: 80,
-                        margin: const EdgeInsets.only(right: 12),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
-                          border: isSelected ? Border.all(color: Colors.black, width: 2) : null,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              width: 50,
-                              height: 50,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[200],
-                                shape: BoxShape.circle,
-                              ),
-                              child: Center(
-                                child: Text(
-                                  pet['icon'],
-                                  style: const TextStyle(fontSize: 30),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              pet['name'],
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
+                  final pets = snapshot.data!.docs;
+                  return SizedBox(
+                    height: 110,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: pets.length,
+                      itemBuilder: (context, index) {
+                        final pet = pets[index].data() as Map<String, dynamic>;
+                        final petName = pet['name'] ?? '';
+                        final petIcon = pet['icon'] ?? '🐱';
+                        final isSelected = petName == _selectedPet;
 
-              // Next feeding card
-              const SizedBox(height: 24),
-              Card(
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Next Feeding',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: () {
-                              Navigator.pushNamed(context, AppRoutes.schedule);
-                            },
-                            child: const Text(
-                              'View Schedule',
-                              style: TextStyle(color: Colors.black),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Container(
-                            width: 50,
-                            height: 50,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[200],
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Center(
-                              child: Icon(Icons.schedule, size: 24),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _nextFeeding['time'],
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              Text(
-                                '${_nextFeeding['type']} - ${_nextFeeding['portion']}',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              // Go Live section (replacing Food level card)
-              const SizedBox(height: 16),
-              Card(
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Live Monitoring',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      Center(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            // Logic to be added later
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Live monitoring feature coming soon!'),
-                              ),
-                            );
+                        return GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _selectedPet = petName;
+                            });
                           },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue[800],
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 40,
-                              vertical: 16,
-                            ),
-                            shape: RoundedRectangleBorder(
+                          child: Container(
+                            width: 80,
+                            margin: const EdgeInsets.only(right: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
                               borderRadius: BorderRadius.circular(10),
+                              border: isSelected ? Border.all(color: Colors.black, width: 2) : null,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  width: 50,
+                                  height: 50,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[200],
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Center(
+                                    child: Text(petIcon, style: const TextStyle(fontSize: 30)),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(petName, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                              ],
                             ),
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.videocam),
-                              const SizedBox(width: 10),
-                              const Text(
-                                'Go Live',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      const Center(
-                        child: Text(
-                          'Monitor your pet in real-time',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                        );
+                      },
+                    ),
+                  );
+                },
               ),
-
-              // Quick actions
               const SizedBox(height: 24),
-              const Text(
-                'Quick Actions',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              _buildNextFeedingCard(),
+              const SizedBox(height: 16),
+              _buildLiveMonitoringCard(),
+              const SizedBox(height: 24),
+              const Text('Quick Actions', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _buildQuickActionButton(
-                    icon: Icons.pets,
-                    label: 'Pet Profile',
-                    onTap: () async {
-                      final user = FirebaseAuth.instance.currentUser;
-
-                      if (user == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('User not logged in')),
-                        );
-                        return;
-                      }
-
-                      try {
-                        final snapshot = await FirebaseFirestore.instance
-                            .collection('pets')
-                            .where('updatedBy', isEqualTo: user.uid)
-                            .limit(1)
-                            .get();
-
-                        if (snapshot.docs.isNotEmpty) {
-                          final petName = snapshot.docs.first.data()['name'];
-                          if (petName != null && petName.toString().isNotEmpty) {
-                            Navigator.pushNamed(
-                              context,
-                              AppRoutes.petProfile,
-                              arguments: petName,
-                            );
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Pet name is missing in Firestore')),
-                            );
-                          }
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('No pets found for this user')),
-                          );
-                        }
-                      } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Error loading pet: $e')),
-                        );
-                      }
-                    },
-                  ),
-
-                  _buildQuickActionButton(
-                    icon: Icons.restaurant,
-                    label: 'Feed Now',
-                    onTap: _navigateToManualFeed,
-                  ),
-                  _buildQuickActionButton(
-                    icon: Icons.history,
-                    label: 'History',
-                    onTap: () {
-                      Navigator.pushNamed(context, AppRoutes.history);
-                    },
-                  ),
-                  _buildQuickActionButton(
-                    icon: Icons.settings,
-                    label: 'Settings',
-                    onTap: () {
-                      Navigator.pushNamed(context, AppRoutes.settings);
-                    },
-                  ),
+                  _buildQuickActionButton(icon: Icons.pets, label: 'Pet Profile', onTap: _navigateToPetProfile),
+                  _buildQuickActionButton(icon: Icons.restaurant, label: 'Feed Now', onTap: _navigateToManualFeed),
+                  _buildQuickActionButton(icon: Icons.history, label: 'History', onTap: () => Navigator.pushNamed(context, AppRoutes.history)),
+                  _buildQuickActionButton(icon: Icons.settings, label: 'Settings', onTap: () => Navigator.pushNamed(context, AppRoutes.settings)),
                 ],
               ),
-
-              // Recent activity
               const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Recent Activity',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pushNamed(context, AppRoutes.history);
-                    },
-                    child: const Text(
-                      'View All',
-                      style: TextStyle(color: Colors.black),
-                    ),
-                  ),
-                ],
-              ),
+              _buildActivityHeader(),
               const SizedBox(height: 8),
-              _buildActivityItem(
-                icon: Icons.restaurant,
-                title: 'Breakfast',
-                description: '1 portion dispensed',
-                time: '7:30 AM',
-                status: 'Completed',
-              ),
+              _buildActivityItem(icon: Icons.restaurant, title: 'Breakfast', description: '1 portion dispensed', time: '7:30 AM', status: 'Completed'),
               const Divider(),
-              _buildActivityItem(
-                icon: Icons.schedule,
-                title: 'Schedule Updated',
-                description: 'Added dinner at 6:30 PM',
-                time: 'Yesterday',
-                status: null,
-              ),
+              _buildActivityItem(icon: Icons.schedule, title: 'Schedule Updated', description: 'Added dinner at 6:30 PM', time: 'Yesterday'),
               const SizedBox(height: 24),
             ],
           ),
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today),
-            label: 'Schedule',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history),
-            label: 'History',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Settings',
-          ),
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'Schedule'),
+          BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
+          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.black,
@@ -497,12 +243,92 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: Icon(icon, color: Colors.black),
           ),
           const SizedBox(height: 8),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 12),
-          ),
+          Text(label, style: const TextStyle(fontSize: 12)),
         ],
       ),
+    );
+  }
+
+  Widget _buildNextFeedingCard() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          children: [
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(color: Colors.grey[200], shape: BoxShape.circle),
+              child: const Center(child: Icon(Icons.schedule, size: 24)),
+            ),
+            const SizedBox(width: 16),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(_nextFeeding['time'], style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Text('${_nextFeeding['type']} - ${_nextFeeding['portion']}', style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLiveMonitoringCard() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Live Monitoring', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 20),
+            Center(
+              child: ElevatedButton(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Live monitoring feature coming soon!')),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue[800],
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.videocam),
+                    SizedBox(width: 10),
+                    Text('Go Live', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            const Center(child: Text('Monitor your pet in real-time', style: TextStyle(fontSize: 14, color: Colors.grey))),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActivityHeader() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        const Text('Recent Activity', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        TextButton(
+          onPressed: () => Navigator.pushNamed(context, AppRoutes.history),
+          child: const Text('View All', style: TextStyle(color: Colors.black)),
+        ),
+      ],
     );
   }
 
@@ -520,10 +346,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Container(
             width: 40,
             height: 40,
-            decoration: BoxDecoration(
-              color: Colors.grey[200],
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: Colors.grey[200], shape: BoxShape.circle),
             child: Icon(icon, size: 20),
           ),
           const SizedBox(width: 16),
@@ -531,50 +354,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  description,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
-                ),
+                Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(description, style: TextStyle(fontSize: 14, color: Colors.grey[600])),
               ],
             ),
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                time,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
-              ),
+              Text(time, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
               if (status != null)
                 Container(
                   margin: const EdgeInsets.only(top: 4),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.green[100],
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    status,
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: Colors.green[700],
-                    ),
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(color: Colors.green[100], borderRadius: BorderRadius.circular(10)),
+                  child: Text(status, style: TextStyle(fontSize: 10, color: Colors.green[700])),
                 ),
             ],
           ),
