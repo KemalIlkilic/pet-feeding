@@ -32,7 +32,7 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const ProfileScreen());
       case AppRoutes.petProfile:
         final petName = routeSettings.arguments as String?;
-        return MaterialPageRoute(builder: (_) => PetProfileScreen(petName: petName));
+        return MaterialPageRoute(builder: (_) => PetProfileScreen(petId: petName));
       case AppRoutes.schedule:
         return MaterialPageRoute(builder: (_) => const ScheduleScreen());
       case AppRoutes.manualFeed:

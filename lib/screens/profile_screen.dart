@@ -15,11 +15,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
 
-  final List<Map<String, dynamic>> _pets = [
-    {'name': 'Whiskers', 'type': 'Cat', 'icon': '🐱'},
-    {'name': 'Buddy', 'type': 'Dog', 'icon': '🐶'},
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -30,7 +25,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+        final doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
         final data = doc.data();
         if (data != null) {
           setState(() {
@@ -51,14 +49,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.dispose();
   }
 
-  void _navigateToPetProfile(String petName) {
-    Navigator.pushNamed(context, AppRoutes.petProfile, arguments: petName);
+  void _navigateToPetProfile(String petId) {
+    Navigator.pushNamed(context, AppRoutes.petProfile, arguments: petId);
   }
 
-  void _addPet() {
-    print('Add new pet clicked');
+  void _addPet() async {
+    final user = FirebaseAuth.instance.currentUser;
+    final newDoc = await FirebaseFirestore.instance.collection('pets').add({
+      'name': 'New Pet',
+      'type': '',
+      'icon': '🐾',
+      'updatedBy': user?.uid ?? '',
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+
+    Navigator.pushNamed(context, AppRoutes.petProfile, arguments: newDoc.id);
   }
-@override
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -79,32 +87,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         CircleAvatar(
                           radius: 60,
                           backgroundColor: Colors.grey[300],
-                          child: const Icon(Icons.person, size: 60, color: Colors.grey),
+                          child: const Icon(Icons.person,
+                              size: 60, color: Colors.grey),
                         ),
                       ],
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      _nameController.text,
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      _nameController.text.isNotEmpty
+                          ? _nameController.text
+                          : 'Loading...',
+                      style: const TextStyle(
+                          fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      _emailController.text,
+                      style: const TextStyle(fontSize: 14, color: Colors.grey),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 30),
-              const Text(
-                'Account Information',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 15),
-              _buildInfoField(
-                label: 'Full Name',
-                controller: _nameController,
-              ),
-              const SizedBox(height: 15),
-              _buildInfoField(
-                label: 'Email Address',
-                controller: _emailController,
               ),
               const SizedBox(height: 30),
               const Text(
@@ -112,25 +114,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 15),
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: _pets.length,
-                itemBuilder: (context, index) {
-                  final pet = _pets[index];
-                  return Card(
-                    elevation: 1,
-                    margin: const EdgeInsets.only(bottom: 10),
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: Colors.grey[200],
-                        child: Text(pet['icon'], style: const TextStyle(fontSize: 20)),
-                      ),
-                      title: Text(pet['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Text(pet['type']),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => _navigateToPetProfile(pet['name']),
-                    ),
+              StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('pets')
+                    .where('updatedBy',
+                        isEqualTo: FirebaseAuth.instance.currentUser?.uid)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return const Text('No pets found');
+                  }
+
+                  final pets = snapshot.data!.docs;
+
+                  return ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: pets.length,
+                    itemBuilder: (context, index) {
+                      final pet = pets[index].data() as Map<String, dynamic>;
+                      final petId = pets[index].id;
+
+                      return Card(
+                        elevation: 1,
+                        margin: const EdgeInsets.only(bottom: 10),
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: Colors.grey[200],
+                            child: Text(pet['icon'] ?? '🐾',
+                                style: const TextStyle(fontSize: 20)),
+                          ),
+                          title: Text(pet['name'],
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold)),
+                          subtitle: Text(pet['type']),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () =>
+                              _navigateToPetProfile(petId), // ✅ pass doc ID
+                        ),
+                      );
+                    },
                   );
                 },
               ),
@@ -138,7 +164,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Center(
                 child: OutlinedButton.icon(
                   icon: const Icon(Icons.add, color: Colors.black),
-                  label: const Text('Add New Pet', style: TextStyle(color: Colors.black)),
+                  label: const Text('Add New Pet',
+                      style: TextStyle(color: Colors.black)),
                   onPressed: _addPet,
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: Colors.grey),
@@ -153,14 +180,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 15),
               ListTile(
                 leading: const Icon(Icons.logout, color: Colors.red),
-                title: const Text('Logout', style: TextStyle(color: Colors.red)),
+                title:
+                    const Text('Logout', style: TextStyle(color: Colors.red)),
                 onTap: () {
-                  Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (route) => false);
+                  Navigator.pushNamedAndRemoveUntil(
+                      context, AppRoutes.login, (route) => false);
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.delete_forever, color: Colors.red),
-title: const Text('Delete Account', style: TextStyle(color: Colors.red)),
+                title: const Text('Delete Account',
+                    style: TextStyle(color: Colors.red)),
                 onTap: () {
                   print('Delete account clicked');
                 },

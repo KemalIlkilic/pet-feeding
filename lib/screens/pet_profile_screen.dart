@@ -4,9 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 
 class PetProfileScreen extends StatefulWidget {
-  final String? petName; // Argument passed from ProfileScreen
+  final String? petId; // Argument passed from ProfileScreen
 
-  const PetProfileScreen({super.key, this.petName});
+  const PetProfileScreen({super.key, this.petId});
 
   @override
   State<PetProfileScreen> createState() => _PetProfileScreenState();
@@ -41,9 +41,9 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
   void initState() {
     super.initState();
     // If petName is provided, load the actual pet data
-    if (widget.petName != null) {
-  print("Loading data for pet: ${widget.petName}");
-  print("🐾 widget.petName: ${widget.petName}");
+    if (widget.petId != null) {
+  print("Loading data for pet: ${widget.petId}");
+  print("🐾 widget.petName: ${widget.petId}");
 
   _loadPetData(); // 🔥 this fetches the data from Firestore
     }
@@ -110,10 +110,11 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
   Future<void> _saveToFirestore() async {
   final user = FirebaseAuth.instance.currentUser;
 
-  final docId = widget.petName ?? _nameController.text;
-  final petDoc = FirebaseFirestore.instance.collection('pets').doc(docId);
+  // ✅ use the existing document ID if editing
+  final docId = widget.petId ?? FirebaseFirestore.instance.collection('pets').doc().id;
 
-  await petDoc.set({
+  final petDoc = FirebaseFirestore.instance.collection('pets').doc(docId);
+await petDoc.set({
     'name': _nameController.text,
     'age': _ageController.text,
     'type': _typeController.text,
@@ -132,9 +133,10 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
   });
 }
 
+
 Future<void> _loadPetData() async {
   try {
-    if (widget.petName == null) {
+    if (widget.petId == null) {
       print("⚠️ widget.petName is null");
       setState(() => _isLoading = false);
       return;
@@ -142,7 +144,7 @@ Future<void> _loadPetData() async {
 
     final doc = await FirebaseFirestore.instance
         .collection('pets')
-        .doc(widget.petName)
+        .doc(widget.petId)
         .get();
 
     if (doc.exists) {
@@ -161,7 +163,7 @@ Future<void> _loadPetData() async {
       _consumptionController.text = data['consumption'] ?? '';
       _vetVisitController.text = data['vetVisit'] ?? '';
     } else {
-      print("⚠️ No document found for: ${widget.petName}");
+      print("⚠️ No document found for: ${widget.petId}");
     }
   } catch (e) {
     print("🔥 Error loading pet data: $e");
@@ -184,8 +186,7 @@ Widget build(BuildContext context) {
     appBar: AppBar(
       title: Text('${_nameController.text}\'s Profile'),
     ),
-
-      body: SingleChildScrollView(
+body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
         child: Form(
           key: _formKey,
@@ -201,7 +202,7 @@ Widget build(BuildContext context) {
                         CircleAvatar(
                           radius: 75,
                           backgroundColor: Colors.grey[300],
-                          child: const Text('🐱', style: TextStyle(fontSize: 60)),
+                          child: const Text('🐾', style: TextStyle(fontSize: 60)),
                           // TODO: Add image loading/selection
                         ),
                         Positioned(
@@ -260,8 +261,7 @@ Widget build(BuildContext context) {
                 ),
               ),
               const SizedBox(height: 20),
-
-              // Feeding Preferences Card
+// Feeding Preferences Card
               _buildInfoCard(
                 title: 'Feeding Preferences',
                 isEditing: _isEditingFeedingPrefs,
@@ -336,8 +336,7 @@ Widget build(BuildContext context) {
       ),
     );
   }
-
-  Widget _buildInfoCard({
+Widget _buildInfoCard({
     required String title,
     required bool isEditing,
     required VoidCallback onEditToggle,
@@ -454,4 +453,3 @@ Widget build(BuildContext context) {
     );
   }
 }
-
