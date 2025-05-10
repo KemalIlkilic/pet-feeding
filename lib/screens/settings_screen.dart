@@ -9,7 +9,7 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  String _selectedPet = 'Whiskers';
+  //String _selectedPet = 'Whiskers';
   bool _isAutomaticMode = true;
   bool _lowFoodNotification = true;
   bool _feedingSuccessNotification = true;
@@ -47,48 +47,48 @@ class _SettingsScreenState extends State<SettingsScreen> {
       appBar: AppBar(
         title: const Text('Settings'),
       ),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(vertical: 16.0),
-        children: [
-          // Pet selection (optional, could be global or removed from settings)
-          _buildSectionTitle('Selected Pet'),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: Colors.grey[300],
-                  child: Text(_selectedPet == 'Whiskers' ? '🐱' : (_selectedPet == 'Buddy' ? '🐶' : '🐰'), style: const TextStyle(fontSize: 20)),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  _selectedPet,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const Spacer(),
-                PopupMenuButton<String>(
-                  icon: const Icon(Icons.arrow_drop_down),
-                  onSelected: (String pet) {
-                    setState(() {
-                      _selectedPet = pet;
-                    });
-                  },
-                  itemBuilder: (BuildContext context) {
-                    return ['Whiskers', 'Buddy', 'Hoppy'].map((String pet) {
-                      return PopupMenuItem<String>(
-                        value: pet,
-                        child: Text(pet),
-                      );
-                    }).toList();
-                  },
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 32),
+       body: ListView(
+         padding: const EdgeInsets.symmetric(vertical: 16.0),
+         children: [
+      //     // Pet selection (optional, could be global or removed from settings)
+      //     _buildSectionTitle('Selected Pet'),
+      //     Padding(
+      //       padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      //       child: Row(
+      //         children: [
+      //           CircleAvatar(
+      //             backgroundColor: Colors.grey[300],
+      //             child: Text(_selectedPet == 'Whiskers' ? '🐱' : (_selectedPet == 'Buddy' ? '🐶' : '🐰'), style: const TextStyle(fontSize: 20)),
+      //           ),
+      //           const SizedBox(width: 12),
+      //           Text(
+      //             _selectedPet,
+      //             style: const TextStyle(
+      //               fontSize: 18,
+      //               fontWeight: FontWeight.bold,
+      //             ),
+      //           ),
+      //           const Spacer(),
+      //           PopupMenuButton<String>(
+      //             icon: const Icon(Icons.arrow_drop_down),
+      //             onSelected: (String pet) {
+      //               setState(() {
+      //                 _selectedPet = pet;
+      //               });
+      //             },
+      //             itemBuilder: (BuildContext context) {
+      //               return ['Whiskers', 'Buddy', 'Hoppy'].map((String pet) {
+      //                 return PopupMenuItem<String>(
+      //                   value: pet,
+      //                   child: Text(pet),
+      //                 );
+      //               }).toList();
+      //             },
+      //           ),
+      //         ],
+      //       ),
+      //     ),
+      //     const Divider(height: 32),
 
           // Device Linking
           _buildSectionTitle('Device Management'),

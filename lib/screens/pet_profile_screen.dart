@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-
 class PetProfileScreen extends StatefulWidget {
   final String? petId; // Argument passed from ProfileScreen
 
@@ -18,7 +17,6 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
   bool _isEditingFeedingPrefs = false;
   bool _isEditingHealthMetrics = false;
   bool _isLoading = true;
-
 
   // Mock data - replace with actual data fetching based on widget.petName
   final _nameController = TextEditingController(text: 'Whiskers');
@@ -42,10 +40,10 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
     super.initState();
     // If petName is provided, load the actual pet data
     if (widget.petId != null) {
-  print("Loading data for pet: ${widget.petId}");
-  print("🐾 widget.petName: ${widget.petId}");
+      print("Loading data for pet: ${widget.petId}");
+      print("🐾 widget.petName: ${widget.petId}");
 
-  _loadPetData(); // 🔥 this fetches the data from Firestore
+      _loadPetData(); // 🔥 this fetches the data from Firestore
     }
   }
 
@@ -86,107 +84,107 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
   }
 
   void _saveChanges() async {
-  if (_formKey.currentState!.validate()) {
-    try {
-      await _saveToFirestore();
+    if (_formKey.currentState!.validate()) {
+      try {
+        await _saveToFirestore();
 
-      setState(() {
-        _isEditingBasicInfo = false;
-        _isEditingFeedingPrefs = false;
-        _isEditingHealthMetrics = false;
-      });
+        setState(() {
+          _isEditingBasicInfo = false;
+          _isEditingFeedingPrefs = false;
+          _isEditingHealthMetrics = false;
+        });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pet profile saved to Firestore')),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to save profile: $e')),
-      );
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Pet profile saved to Firestore')),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to save profile: $e')),
+        );
+      }
     }
   }
-}
 
   Future<void> _saveToFirestore() async {
-  final user = FirebaseAuth.instance.currentUser;
+    final user = FirebaseAuth.instance.currentUser;
 
-  // ✅ use the existing document ID if editing
-  final docId = widget.petId ?? FirebaseFirestore.instance.collection('pets').doc().id;
+    // ✅ use the existing document ID if editing
+    final docId =
+        widget.petId ?? FirebaseFirestore.instance.collection('pets').doc().id;
 
-  final petDoc = FirebaseFirestore.instance.collection('pets').doc(docId);
-await petDoc.set({
-    'name': _nameController.text,
-    'age': _ageController.text,
-    'type': _typeController.text,
-    'breed': _breedController.text,
-    'weight': _weightController.text,
-    'gender': _genderController.text,
-    'foodType': _foodTypeController.text,
-    'dailyPortions': _dailyPortionsController.text,
-    'portionSize': _portionSizeController.text,
-    'specialDiet': _specialDietController.text,
-    'weightTrend': _weightTrendController.text,
-    'consumption': _consumptionController.text,
-    'vetVisit': _vetVisitController.text,
-    'updatedBy': user?.uid ?? "anonymous",
-    'updatedAt': FieldValue.serverTimestamp(),
-  });
-}
-
-
-Future<void> _loadPetData() async {
-  try {
-    if (widget.petId == null) {
-      print("⚠️ widget.petName is null");
-      setState(() => _isLoading = false);
-      return;
-    }
-
-    final doc = await FirebaseFirestore.instance
-        .collection('pets')
-        .doc(widget.petId)
-        .get();
-
-    if (doc.exists) {
-      final data = doc.data()!;
-      _nameController.text = data['name'] ?? '';
-      _ageController.text = data['age'] ?? '';
-      _typeController.text = data['type'] ?? '';
-      _breedController.text = data['breed'] ?? '';
-      _weightController.text = data['weight'] ?? '';
-      _genderController.text = data['gender'] ?? '';
-      _foodTypeController.text = data['foodType'] ?? '';
-      _dailyPortionsController.text = data['dailyPortions'] ?? '';
-      _portionSizeController.text = data['portionSize'] ?? '';
-      _specialDietController.text = data['specialDiet'] ?? '';
-      _weightTrendController.text = data['weightTrend'] ?? '';
-      _consumptionController.text = data['consumption'] ?? '';
-      _vetVisitController.text = data['vetVisit'] ?? '';
-    } else {
-      print("⚠️ No document found for: ${widget.petId}");
-    }
-  } catch (e) {
-    print("🔥 Error loading pet data: $e");
+    final petDoc = FirebaseFirestore.instance.collection('pets').doc(docId);
+    await petDoc.set({
+      'name': _nameController.text,
+      'age': _ageController.text,
+      'type': _typeController.text,
+      'breed': _breedController.text,
+      'weight': _weightController.text,
+      'gender': _genderController.text,
+      'foodType': _foodTypeController.text,
+      'dailyPortions': _dailyPortionsController.text,
+      'portionSize': _portionSizeController.text,
+      'specialDiet': _specialDietController.text,
+      'weightTrend': _weightTrendController.text,
+      'consumption': _consumptionController.text,
+      'vetVisit': _vetVisitController.text,
+      'updatedBy': user?.uid ?? "anonymous",
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
   }
 
-  setState(() {
-    _isLoading = false; // Always clear loading
-  });
-}
+  Future<void> _loadPetData() async {
+    try {
+      if (widget.petId == null) {
+        print("⚠️ widget.petName is null");
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      final doc = await FirebaseFirestore.instance
+          .collection('pets')
+          .doc(widget.petId)
+          .get();
+
+      if (doc.exists) {
+        final data = doc.data()!;
+        _nameController.text = data['name'] ?? '';
+        _ageController.text = data['age'] ?? '';
+        _typeController.text = data['type'] ?? '';
+        _breedController.text = data['breed'] ?? '';
+        _weightController.text = data['weight'] ?? '';
+        _genderController.text = data['gender'] ?? '';
+        _foodTypeController.text = data['foodType'] ?? '';
+        _dailyPortionsController.text = data['dailyPortions'] ?? '';
+        _portionSizeController.text = data['portionSize'] ?? '';
+        _specialDietController.text = data['specialDiet'] ?? '';
+        _weightTrendController.text = data['weightTrend'] ?? '';
+        _consumptionController.text = data['consumption'] ?? '';
+        _vetVisitController.text = data['vetVisit'] ?? '';
+      } else {
+        print("⚠️ No document found for: ${widget.petId}");
+      }
+    } catch (e) {
+      print("🔥 Error loading pet data: $e");
+    }
+
+    setState(() {
+      _isLoading = false; // Always clear loading
+    });
+  }
 
   @override
-Widget build(BuildContext context) {
-  if (_isLoading) {
-    return const Scaffold(
-      body: Center(child: CircularProgressIndicator()),
-    );
-  }
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
-  return Scaffold(
-    appBar: AppBar(
-      title: Text('${_nameController.text}\'s Profile'),
-    ),
-body: SingleChildScrollView(
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('${_nameController.text}\'s Profile'),
+      ),
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
         child: Form(
           key: _formKey,
@@ -202,7 +200,8 @@ body: SingleChildScrollView(
                         CircleAvatar(
                           radius: 75,
                           backgroundColor: Colors.grey[300],
-                          child: const Text('🐾', style: TextStyle(fontSize: 60)),
+                          child:
+                              const Text('🐾', style: TextStyle(fontSize: 60)),
                           // TODO: Add image loading/selection
                         ),
                         Positioned(
@@ -212,8 +211,11 @@ body: SingleChildScrollView(
                             radius: 22,
                             backgroundColor: Colors.black,
                             child: IconButton(
-                              icon: const Icon(Icons.camera_alt, color: Colors.white, size: 22),
-                              onPressed: () { /* TODO: Implement photo upload */ },
+                              icon: const Icon(Icons.camera_alt,
+                                  color: Colors.white, size: 22),
+                              onPressed: () {
+                                /* TODO: Implement photo upload */
+                              },
                             ),
                           ),
                         ),
@@ -222,7 +224,8 @@ body: SingleChildScrollView(
                     const SizedBox(height: 15),
                     Text(
                       _nameController.text,
-                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                          fontSize: 24, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 5),
                     Text(
@@ -252,11 +255,16 @@ body: SingleChildScrollView(
                 editContent: Column(
                   children: [
                     _buildEditField('Name', _nameController),
-                    _buildEditField('Age (years)', _ageController, keyboardType: TextInputType.number),
-                    _buildEditField('Type', _typeController), // Consider Dropdown
+                    _buildEditField('Age (years)', _ageController,
+                        keyboardType: TextInputType.number),
+                    _buildEditField(
+                        'Type', _typeController), // Consider Dropdown
                     _buildEditField('Breed', _breedController),
-                    _buildEditField('Weight (kg)', _weightController, keyboardType: const TextInputType.numberWithOptions(decimal: true)),
-                    _buildEditField('Gender', _genderController), // Consider Dropdown
+                    _buildEditField('Weight (kg)', _weightController,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true)),
+                    _buildEditField(
+                        'Gender', _genderController), // Consider Dropdown
                   ],
                 ),
               ),
@@ -269,17 +277,28 @@ body: SingleChildScrollView(
                 viewContent: Column(
                   children: [
                     _buildViewRow('Food Type', _foodTypeController.text),
-                    _buildViewRow('Daily Portions', '${_dailyPortionsController.text} meals'),
-                    _buildViewRow('Portion Size', '${_portionSizeController.text}g per meal'),
-                    _buildViewRow('Special Diet', _specialDietController.text.isEmpty ? 'None' : _specialDietController.text),
+                    _buildViewRow('Daily Portions',
+                        '${_dailyPortionsController.text} meals'),
+                    _buildViewRow('Portion Size',
+                        '${_portionSizeController.text}g per meal'),
+                    _buildViewRow(
+                        'Special Diet',
+                        _specialDietController.text.isEmpty
+                            ? 'None'
+                            : _specialDietController.text),
                   ],
                 ),
                 editContent: Column(
                   children: [
-                    _buildEditField('Food Type', _foodTypeController), // Consider Dropdown
-                    _buildEditField('Daily Portions', _dailyPortionsController, keyboardType: TextInputType.number),
-                    _buildEditField('Portion Size (g)', _portionSizeController, keyboardType: TextInputType.number),
-                    _buildEditField('Special Diet Notes', _specialDietController, hint: 'Enter any special dietary needs'),
+                    _buildEditField(
+                        'Food Type', _foodTypeController), // Consider Dropdown
+                    _buildEditField('Daily Portions', _dailyPortionsController,
+                        keyboardType: TextInputType.number),
+                    _buildEditField('Portion Size (g)', _portionSizeController,
+                        keyboardType: TextInputType.number),
+                    _buildEditField(
+                        'Special Diet Notes', _specialDietController,
+                        hint: 'Enter any special dietary needs'),
                   ],
                 ),
               ),
@@ -292,23 +311,35 @@ body: SingleChildScrollView(
                 onEditToggle: _toggleEditHealthMetrics,
                 viewContent: Column(
                   children: [
-                    _buildHealthMetricRow(Icons.monitor_weight, 'Weight Trend', '${_weightTrendController.text} (${_weightController.text} kg)'),
-                    _buildHealthMetricRow(Icons.restaurant_menu, 'Avg. Daily Consumption', '${_consumptionController.text}g per day'),
-                    _buildHealthMetricRow(Icons.event, 'Last Vet Visit', _vetVisitController.text),
+                    _buildHealthMetricRow(Icons.monitor_weight, 'Weight Trend',
+                        '${_weightTrendController.text} (${_weightController.text} kg)'),
+                    _buildHealthMetricRow(
+                        Icons.restaurant_menu,
+                        'Avg. Daily Consumption',
+                        '${_consumptionController.text}g per day'),
+                    _buildHealthMetricRow(Icons.event, 'Last Vet Visit',
+                        _vetVisitController.text),
                   ],
                 ),
                 editContent: Column(
                   children: [
-                    _buildEditField('Weight Trend', _weightTrendController), // Consider Dropdown
-                    _buildEditField('Avg. Daily Consumption (g)', _consumptionController, keyboardType: TextInputType.number),
-                    _buildEditField('Last Vet Visit', _vetVisitController, keyboardType: TextInputType.datetime, hint: 'YYYY-MM-DD'),
+                    _buildEditField('Weight Trend',
+                        _weightTrendController), // Consider Dropdown
+                    _buildEditField(
+                        'Avg. Daily Consumption (g)', _consumptionController,
+                        keyboardType: TextInputType.number),
+                    _buildEditField('Last Vet Visit', _vetVisitController,
+                        keyboardType: TextInputType.datetime,
+                        hint: 'YYYY-MM-DD'),
                   ],
                 ),
               ),
               const SizedBox(height: 30),
 
               // Save Button (only show if any section is being edited)
-              if (_isEditingBasicInfo || _isEditingFeedingPrefs || _isEditingHealthMetrics)
+              if (_isEditingBasicInfo ||
+                  _isEditingFeedingPrefs ||
+                  _isEditingHealthMetrics)
                 ElevatedButton(
                   onPressed: _saveChanges,
                   style: ElevatedButton.styleFrom(
@@ -318,17 +349,52 @@ body: SingleChildScrollView(
                 ),
               const SizedBox(height: 20),
 
-              // Add Another Pet Button
+              // Delete Pet Button
               Center(
                 child: OutlinedButton.icon(
-                  icon: const Icon(Icons.add, color: Colors.black),
-                  label: const Text('Add Another Pet', style: TextStyle(color: Colors.black)),
-                  onPressed: () { /* TODO: Implement add pet logic */ },
+                  icon: const Icon(Icons.delete_forever, color: Colors.red),
+                  label: const Text('Delete Pet',
+                      style: TextStyle(color: Colors.red)),
+                  onPressed: () async {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Delete Pet'),
+                        content: const Text(
+                            'Are you sure you want to delete this pet?'),
+                        actions: [
+                          TextButton(
+                            child: const Text('Cancel'),
+                            onPressed: () => Navigator.pop(context, false),
+                          ),
+                          TextButton(
+                            child: const Text('Delete',
+                                style: TextStyle(color: Colors.red)),
+                            onPressed: () => Navigator.pop(context, true),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (confirm == true && widget.petId != null) {
+                      await FirebaseFirestore.instance
+                          .collection('pets')
+                          .doc(widget.petId)
+                          .delete();
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Pet deleted')),
+                      );
+
+                      Navigator.pop(context); // Return to previous screen
+                    }
+                  },
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Colors.grey),
+                    side: const BorderSide(color: Colors.red),
                   ),
                 ),
               ),
+
               const SizedBox(height: 20),
             ],
           ),
@@ -336,7 +402,8 @@ body: SingleChildScrollView(
       ),
     );
   }
-Widget _buildInfoCard({
+
+  Widget _buildInfoCard({
     required String title,
     required bool isEditing,
     required VoidCallback onEditToggle,
@@ -356,7 +423,8 @@ Widget _buildInfoCard({
               children: [
                 Text(
                   title,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 TextButton(
                   onPressed: onEditToggle,
@@ -415,14 +483,16 @@ Widget _buildInfoCard({
           labelText: label,
           hintText: hint,
           border: const OutlineInputBorder(),
-          contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
         ),
-        validator: validator ?? (value) {
-          if (value == null || value.isEmpty) {
-            return 'Please enter $label';
-          }
-          return null;
-        },
+        validator: validator ??
+            (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter $label';
+              }
+              return null;
+            },
       ),
     );
   }
@@ -444,7 +514,8 @@ Widget _buildInfoCard({
               const SizedBox(height: 2),
               Text(
                 value,
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                style:
+                    const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
               ),
             ],
           ),

@@ -42,10 +42,10 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void _forgotPassword() {
-    // TODO: Implement forgot password logic
-    print('Forgot password clicked');
-  }
+  // void _forgotPassword() {
+  //   // TODO: Implement forgot password logic
+  //   print('Forgot password clicked');
+  // }
 
   void _signInWithGoogle() async {
   try {

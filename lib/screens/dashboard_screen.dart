@@ -13,11 +13,14 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedIndex = 0;
   String _selectedPetId = ''; // loaded from Firestore using doc ID
+  String _userName = '';
+
 
   @override
   void initState() {
     super.initState();
     _loadUserPet(); // initial pet load
+    _loadUserName(); // initial user name load
   }
 
   void _loadUserPet() async {
@@ -36,6 +39,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
       });
     }
   }
+
+  void _loadUserName() async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) return;
+
+  final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+  if (doc.exists) {
+    setState(() {
+      _userName = doc.data()?['fullName'] ?? '';
+    });
+  }
+}
 
   //just adding commenet
   final Map<String, dynamic> _nextFeeding = {
@@ -98,7 +113,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
                 child: Text(
-                  'Welcome, User!',
+                  'Welcome, ${_userName.isNotEmpty ? _userName : 'User'}!',
                   style: Theme.of(context)
                       .textTheme
                       .headlineSmall
