@@ -187,19 +187,43 @@ class _ManualFeedScreenState extends State<ManualFeedScreen> {
             ),
             const SizedBox(height: 20),
 
-            // Status Message
-            Text(
-              _statusMessage,
-              style: TextStyle(
-                fontSize: 16,
-                color: _isFeeding
-                    ? Colors.blue
-                    : (_statusMessage.startsWith('Success')
+            // 🔁 Real-time Status Message from Firebase (updated)
+            StreamBuilder<DatabaseEvent>(
+              stream: databaseRef.child('status').onValue,
+              builder: (context, snapshot) {
+                String status = 'Waiting...';
+                if (snapshot.hasData && snapshot.data!.snapshot.value != null) {
+                  status = snapshot.data!.snapshot.value.toString();
+
+                  if (status.toLowerCase().contains("complete")) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) async {
+                      if (_isFeeding) {
+                        setState(() {
+                          _isFeeding = false;
+                          _lastFeedTime = TimeOfDay.now().format(context);
+                        });
+                      }
+
+                      // ✅ Reset the status after showing it
+                      await databaseRef.child('status').set("Ready to feed");
+                    });
+                  }
+                }
+
+                return Text(
+                  status,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: status.toLowerCase().contains("complete")
                         ? Colors.green[700]
-                        : Colors.grey[700]),
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.center,
+                        : (status.toLowerCase().contains("started")
+                            ? Colors.blue
+                            : Colors.grey[700]),
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                );
+              },
             ),
             const Spacer(),
 
