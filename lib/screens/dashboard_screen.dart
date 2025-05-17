@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:pet_feeder_app/routes.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -89,6 +90,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void _navigateToManualFeed() {
     Navigator.pushNamed(context, AppRoutes.manualFeed);
   }
+
+  Future<void> _goLive() async {
+  // redirect to camera ip
+  final url = 'http://192.168.8.111';
+  
+
+  final uri = Uri.parse(url);
+  if (await canLaunchUrl(uri)) {
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Could not launch $url')),
+    );
+  }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -349,12 +366,9 @@ Widget _buildLiveMonitoringCard() {
             const SizedBox(height: 20),
             Center(
               child: ElevatedButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text('Live monitoring feature coming soon!')),
-                  );
-                },
+                
+                onPressed: _goLive,
+
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue[800],
                   foregroundColor: Colors.white,
