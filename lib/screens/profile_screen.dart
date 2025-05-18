@@ -49,6 +49,65 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.dispose();
   }
 
+  /// 1) Show the “Are you sure?” dialog
+  void _confirmDeleteAccount() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Account'),
+        content:
+            const Text('This will permanently delete your data. Continue?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              _deleteAccount();
+            },
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 2) Perform the actual deletion
+  Future<void> _deleteAccount() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    final uid = user.uid;
+    final firestore = FirebaseFirestore.instance;
+
+    try {
+      // a) remove pets
+      final petsSnap = await firestore
+          .collection('pets')
+          .where('updatedBy', isEqualTo: uid)
+          .get();
+      for (var doc in petsSnap.docs) {
+        await doc.reference.delete();
+      }
+      // b) remove user doc
+      await firestore.collection('users').doc(uid).delete();
+      // c) remove auth user
+      await user.delete();
+      // d) back to login
+      Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (_) => false);
+    } on FirebaseAuthException catch (e) {
+      // handle requires-recent-login, etc.
+      final msg = (e.code == 'requires-recent-login')
+          ? 'Please log in again to delete your account.'
+          : 'Error deleting account: ${e.message}';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    } catch (e) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Unexpected error: $e')));
+    }
+  }
+
   void _navigateToPetProfile(String petId) {
     Navigator.pushNamed(context, AppRoutes.petProfile, arguments: petId);
   }
@@ -124,7 +183,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
                   }
-if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                     return const Text('No pets found');
                   }
 
@@ -137,7 +196,6 @@ if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                     itemBuilder: (context, index) {
                       final pet = pets[index].data() as Map<String, dynamic>;
                       final petId = pets[index].id;
-
                       return Card(
                         elevation: 1,
                         margin: const EdgeInsets.only(bottom: 10),
@@ -191,9 +249,7 @@ if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                 leading: const Icon(Icons.delete_forever, color: Colors.red),
                 title: const Text('Delete Account',
                     style: TextStyle(color: Colors.red)),
-                onTap: () {
-                  print('Delete account clicked');
-                },
+                onTap: _confirmDeleteAccount,
               ),
             ],
           ),

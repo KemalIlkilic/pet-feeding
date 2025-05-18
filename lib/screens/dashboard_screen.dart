@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:pet_feeder_app/routes.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:firebase_database/firebase_database.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -13,15 +14,17 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedIndex = 0;
-  String _selectedPetId = ''; // loaded from Firestore using doc ID
+  String _selectedPetId = '';
   String _userName = '';
-
+  String _nextFeedingTime = 'No schedule yet';
+  String _nextFeedingLabel = '—';
 
   @override
   void initState() {
     super.initState();
-    _loadUserPet(); // initial pet load
-    _loadUserName(); // initial user name load
+    _loadUserPet();
+    _loadUserName();
+    _loadNextFeedingTime();
   }
 
   void _loadUserPet() async {
@@ -36,29 +39,66 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     if (snapshot.docs.isNotEmpty) {
       setState(() {
-        _selectedPetId = snapshot.docs.first.id; // ✅ use doc ID
+        _selectedPetId = snapshot.docs.first.id;
       });
     }
   }
 
   void _loadUserName() async {
-  final user = FirebaseAuth.instance.currentUser;
-  if (user == null) return;
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
 
-  final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-  if (doc.exists) {
-    setState(() {
-      _userName = doc.data()?['fullName'] ?? '';
-    });
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+    if (doc.exists) {
+      setState(() {
+        _userName = doc.data()?['fullName'] ?? '';
+      });
+    }
   }
-}
 
-  //just adding commenet
-  final Map<String, dynamic> _nextFeeding = {
-    'time': '6:30 PM',
-    'type': 'Dinner',
-    'portion': '1 portion',
-  };
+  void _loadNextFeedingTime() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final dbRef =
+        FirebaseDatabase.instance.ref('schedules/${user.uid}/userSchedules');
+
+    final snapshot = await dbRef.get();
+    if (snapshot.exists && snapshot.value != null) {
+      final data = Map<String, dynamic>.from(snapshot.value as Map);
+      TimeOfDay? nextTime;
+      String? nextLabel;
+
+      for (final entry in data.entries) {
+        final schedule = Map<String, dynamic>.from(entry.value);
+        if (schedule['active'] == true) {
+          final hour = schedule['hour'];
+          final minute = schedule['minute'];
+          final label = schedule['label'] ?? 'Scheduled Feed';
+
+          final scheduledTime = TimeOfDay(hour: hour, minute: minute);
+          if (nextTime == null ||
+              scheduledTime.hour < nextTime.hour ||
+              (scheduledTime.hour == nextTime.hour &&
+                  scheduledTime.minute < nextTime.minute)) {
+            nextTime = scheduledTime;
+            nextLabel = label;
+          }
+        }
+      }
+
+      if (nextTime != null) {
+        final formattedTime = nextTime.format(context);
+        setState(() {
+          _nextFeedingTime = formattedTime;
+          _nextFeedingLabel = nextLabel ?? 'Scheduled Feed';
+        });
+      }
+    }
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -92,20 +132,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _goLive() async {
-  // redirect to camera ip
-  final url = 'http://192.168.8.111';
-  
+    final url = 'http://192.168.8.104';
 
-  final uri = Uri.parse(url);
-  if (await canLaunchUrl(uri)) {
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Could not launch $url')),
-    );
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not launch $url')),
+      );
+    }
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
@@ -150,7 +187,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 builder: (context, snapshot) {
                   if (!snapshot.hasData)
                     return const CircularProgressIndicator();
-final pets = snapshot.data!.docs;
+                  final pets = snapshot.data!.docs;
                   return SizedBox(
                     height: 110,
                     child: ListView.builder(
@@ -163,7 +200,7 @@ final pets = snapshot.data!.docs;
                         final petName = pet['name'] ?? '';
                         final petIcon = pet['icon'] ?? '🐾';
                         final isSelected = petId == _selectedPetId;
-return GestureDetector(
+                        return GestureDetector(
                           onTap: () {
                             setState(() {
                               _selectedPetId = petId;
@@ -254,7 +291,7 @@ return GestureDetector(
                   title: 'Breakfast',
                   description: '1 portion dispensed',
                   time: '7:30 AM',
-status: 'Completed'),
+                  status: 'Completed'),
               const Divider(),
               _buildActivityItem(
                   icon: Icons.schedule,
@@ -340,10 +377,10 @@ status: 'Completed'),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(_nextFeeding['time'],
+                Text(_nextFeedingTime,
                     style: const TextStyle(
                         fontSize: 18, fontWeight: FontWeight.bold)),
-                Text('${_nextFeeding['type']} - ${_nextFeeding['portion']}',
+                Text(_nextFeedingLabel,
                     style: TextStyle(fontSize: 14, color: Colors.grey[600])),
               ],
             ),
@@ -352,7 +389,8 @@ status: 'Completed'),
       ),
     );
   }
-Widget _buildLiveMonitoringCard() {
+
+  Widget _buildLiveMonitoringCard() {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -366,9 +404,7 @@ Widget _buildLiveMonitoringCard() {
             const SizedBox(height: 20),
             Center(
               child: ElevatedButton(
-                
                 onPressed: _goLive,
-
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue[800],
                   foregroundColor: Colors.white,

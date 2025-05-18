@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pet_feeder_app/routes.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // ✅ Added import
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -26,13 +26,14 @@ class _LoginScreenState extends State<LoginScreen> {
   void _signIn() async {
     if (_formKey.currentState!.validate()) {
       try {
-        final userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+        final userCredential =
+            await FirebaseAuth.instance.signInWithEmailAndPassword(
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
         );
         print('Login successful: ${userCredential.user?.email}');
-        // Navigate to dashboard
-        Navigator.pushNamedAndRemoveUntil(context, AppRoutes.dashboard, (route) => false);
+        Navigator.pushNamedAndRemoveUntil(
+            context, AppRoutes.dashboard, (route) => false);
       } catch (e) {
         print('Login failed: $e');
         ScaffoldMessenger.of(context).showSnackBar(
@@ -42,52 +43,91 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // void _forgotPassword() {
-  //   // TODO: Implement forgot password logic
-  //   print('Forgot password clicked');
-  // }
+  void _showForgotPasswordDialog() {
+    final TextEditingController emailController = TextEditingController();
 
-  void _signInWithGoogle() async {
-  try {
-    final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-
-    if (googleUser == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Google sign-in cancelled')),
-      );
-      return;
-    }
-
-    final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-
-    final credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
-    );
-
-    final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
-    final uid = userCredential.user!.uid;
-
-    // ✅ Save user to Firestore if not already there
-    await FirebaseFirestore.instance.collection('users').doc(uid).set({
-      'fullName': userCredential.user?.displayName ?? '',
-      'email': userCredential.user?.email ?? '',
-      'lastLogin': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
-
-    print('Google login success: ${userCredential.user?.email}');
-    Navigator.pushNamedAndRemoveUntil(context, AppRoutes.dashboard, (route) => false);
-  } catch (e) {
-    print('Google login failed: $e');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Google sign-in failed: $e')),
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Reset Password'),
+        content: TextField(
+          controller: emailController,
+          decoration: const InputDecoration(
+            labelText: 'Enter your email',
+          ),
+          keyboardType: TextInputType.emailAddress,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final email = emailController.text.trim();
+              if (email.isNotEmpty) {
+                try {
+                  await FirebaseAuth.instance
+                      .sendPasswordResetEmail(email: email);
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Password reset email sent')),
+                  );
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error: ${e.toString()}')),
+                  );
+                }
+              }
+            },
+            child: const Text('Send'),
+          ),
+        ],
+      ),
     );
   }
-}
 
+  void _signInWithGoogle() async {
+    try {
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+
+      if (googleUser == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Google sign-in cancelled')),
+        );
+        return;
+      }
+
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final userCredential =
+          await FirebaseAuth.instance.signInWithCredential(credential);
+      final uid = userCredential.user!.uid;
+
+      await FirebaseFirestore.instance.collection('users').doc(uid).set({
+        'fullName': userCredential.user?.displayName ?? '',
+        'email': userCredential.user?.email ?? '',
+        'lastLogin': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      print('Google login success: ${userCredential.user?.email}');
+      Navigator.pushNamedAndRemoveUntil(
+          context, AppRoutes.dashboard, (route) => false);
+    } catch (e) {
+      print('Google login failed: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Google sign-in failed: $e')),
+      );
+    }
+  }
 
   void _signInWithFacebook() {
-    // TODO: Implement Facebook sign-in logic
     print('Sign in with Facebook clicked');
   }
 
@@ -110,7 +150,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // ✅ Paw logo + title restored
                     Container(
                       width: 80,
                       height: 80,
@@ -119,21 +158,23 @@ class _LoginScreenState extends State<LoginScreen> {
                         color: Colors.black,
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Icon(Icons.pets, color: Colors.white, size: 40),
+                      child:
+                          const Icon(Icons.pets, color: Colors.white, size: 40),
                     ),
                     const Text(
                       'PetFeeder',
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                      style:
+                          TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 40),
-
                     const Text(
                       'Sign In',
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                      style:
+                          TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 20),
 
-                    // Email Field
+                    // Email
                     TextFormField(
                       controller: _emailController,
                       decoration: const InputDecoration(
@@ -154,7 +195,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 20),
 
-                    // Password Field
+                    // Password
                     TextFormField(
                       controller: _passwordController,
                       decoration: const InputDecoration(
@@ -172,7 +213,17 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 10),
 
-                  //forgot password button deleted 
+                    // Forgot Password
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: _showForgotPasswordDialog,
+                        child: const Text(
+                          'Forgot Password?',
+                          style: TextStyle(color: Colors.black),
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 20),
 
                     // Sign In Button
@@ -191,36 +242,44 @@ class _LoginScreenState extends State<LoginScreen> {
                         Expanded(child: Divider(thickness: 1)),
                         Padding(
                           padding: EdgeInsets.symmetric(horizontal: 15),
-                          child: Text('OR', style: TextStyle(color: Colors.grey)),
+                          child:
+                              Text('OR', style: TextStyle(color: Colors.grey)),
                         ),
                         Expanded(child: Divider(thickness: 1)),
                       ],
                     ),
                     const SizedBox(height: 30),
 
-                    // Social Login Buttons
+                    // Google
                     OutlinedButton.icon(
-                      icon: const Text('G', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
-                      label: const Text('Continue with Google', style: TextStyle(color: Colors.black)),
+                      icon: const Text('G',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black)),
+                      label: const Text('Continue with Google',
+                          style: TextStyle(color: Colors.black)),
                       onPressed: _signInWithGoogle,
                       style: OutlinedButton.styleFrom(
                         minimumSize: const Size(double.infinity, 50),
                         side: const BorderSide(color: Colors.grey),
                       ),
                     ),
-                   const SizedBox(height: 15),
-                   OutlinedButton.icon(
-                    icon: const Icon(Icons.apple, color: Colors.black),
-                    label: const Text('Continue with Apple ID', style: TextStyle(color: Colors.black)),
-                    onPressed: _signInWithFacebook, // Placeholder for now
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(double.infinity, 50),
-                      side: const BorderSide(color: Colors.grey),
+                    const SizedBox(height: 15),
+
+                    // Apple (placeholder for Facebook)
+                    OutlinedButton.icon(
+                      icon: const Icon(Icons.apple, color: Colors.black),
+                      label: const Text('Continue with Apple ID',
+                          style: TextStyle(color: Colors.black)),
+                      onPressed: _signInWithFacebook,
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(double.infinity, 50),
+                        side: const BorderSide(color: Colors.grey),
                       ),
                     ),
                     const SizedBox(height: 40),
 
-                    // Sign Up Link
+                    // Sign Up
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [

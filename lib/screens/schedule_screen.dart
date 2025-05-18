@@ -92,7 +92,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         loaded.add({
           'id': key,
           'label': v['label'],
-          'portion': v['portion'],
           'days': List<bool>.from(v['days']),
           'active': v['active'],
           'time': TimeOfDay(hour: v['hour'], minute: v['minute']),
@@ -133,7 +132,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     final time = schedule['time'] as TimeOfDay;
     final days = schedule['days'] as List<bool>;
     final label = schedule['label'];
-    final portion = schedule['portion'];
     final active = schedule['active'];
     final id = schedule['id'];
 
@@ -193,8 +191,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 );
               }),
             ),
-            const SizedBox(height: 8),
-            Text('Portion: $portion g'),
           ],
         ),
       ),
@@ -205,8 +201,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     final isEditing = existing != null;
     final labelController =
         TextEditingController(text: existing?['label'] ?? '');
-    final portionController =
-        TextEditingController(text: existing?['portion']?.toString() ?? '30');
     TimeOfDay selectedTime =
         existing?['time'] ?? const TimeOfDay(hour: 12, minute: 0);
     List<bool> selectedDays =
@@ -275,12 +269,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     );
                   }),
                 ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: portionController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Portion (g)'),
-                ),
               ],
             ),
           ),
@@ -296,7 +284,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
                 final Map<String, dynamic> data = {
                   'label': labelController.text,
-                  'portion': int.tryParse(portionController.text) ?? 30,
                   'hour': selectedTime.hour,
                   'minute': selectedTime.minute,
                   'days': selectedDays,
