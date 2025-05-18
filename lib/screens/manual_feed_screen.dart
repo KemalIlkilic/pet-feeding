@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async'; // For Timer
-import 'package:firebase_database/firebase_database.dart'; // ✅ NEW
+import 'package:firebase_database/firebase_database.dart';
 
 class ManualFeedScreen extends StatefulWidget {
   const ManualFeedScreen({super.key});
@@ -10,51 +10,58 @@ class ManualFeedScreen extends StatefulWidget {
 }
 
 class _ManualFeedScreenState extends State<ManualFeedScreen> {
-  String _selectedPet = 'Whiskers';
-  double _selectedPortion = 30.0; // Default portion in grams
+  double _selectedPortion = 30.0;
   final double _minPortion = 10.0;
   final double _maxPortion = 100.0;
-  final double _foodLevel = 0.65; // Mock food level (65%)
-  String _statusMessage = 'Ready to feed';
   bool _isFeeding = false;
   String? _lastFeedTime;
+  String _sensorStatus = "HIGH"; // Default to high
 
-  final databaseRef = FirebaseDatabase.instance.ref(); // ✅ NEW
+  final databaseRef = FirebaseDatabase.instance.ref();
 
   void _feedNow() async {
     if (_isFeeding) return;
 
     setState(() {
       _isFeeding = true;
-      _statusMessage = 'Dispensing ${_selectedPortion.toInt()}g...';
     });
 
-    // ✅ Send the feed command to Firebase Realtime DB
     try {
       await databaseRef.child('commands').update({'feedNow': true});
     } catch (e) {
       print('Failed to send command: $e');
     }
 
-    // Simulate feeding process
     Timer(const Duration(seconds: 3), () {
       setState(() {
         _isFeeding = false;
-        _statusMessage = 'Successfully dispensed ${_selectedPortion.toInt()}g';
         _lastFeedTime = TimeOfDay.now().format(context);
-      });
-      Timer(const Duration(seconds: 5), () {
-        if (mounted) {
-          setState(() {
-            _statusMessage = 'Ready to feed';
-          });
-        }
       });
     });
   }
 
   @override
+  void initState() {
+    super.initState();
+    // Listen for sensor status changes
+    databaseRef.child('status/sensorStatus').onValue.listen((event) {
+      final value = event.snapshot.value;
+      if (value != null && value.toString() == "LOW_FOOD") {
+        setState(() {
+          _sensorStatus = "LOW";
+        });
+      } else {
+        setState(() {
+          _sensorStatus = "HIGH";
+        });
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final bool isFoodLow = _sensorStatus == "LOW";
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Manual Feeding'),
@@ -64,50 +71,7 @@ class _ManualFeedScreenState extends State<ManualFeedScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Pet selection
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircleAvatar(
-                    backgroundColor: Colors.grey[300],
-                    child: const Text('🐱', style: TextStyle(fontSize: 20)),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    _selectedPet,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const Spacer(),
-                  PopupMenuButton<String>(
-                    icon: const Icon(Icons.arrow_drop_down),
-                    onSelected: (String pet) {
-                      setState(() {
-                        _selectedPet = pet;
-                      });
-                    },
-                    itemBuilder: (BuildContext context) {
-                      return ['Whiskers', 'Buddy', 'Hoppy'].map((String pet) {
-                        return PopupMenuItem<String>(
-                          value: pet,
-                          child: Text(pet),
-                        );
-                      }).toList();
-                    },
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 20),
 
             // Food Level Display
             Row(
@@ -116,7 +80,7 @@ class _ManualFeedScreenState extends State<ManualFeedScreen> {
                 Icon(Icons.storage, color: Colors.grey[600]),
                 const SizedBox(width: 8),
                 Text(
-                  'Food Level: ${(_foodLevel * 100).toInt()}%',
+                  'Food Level: ${isFoodLow ? "Low" : "High"}',
                   style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                 ),
               ],
@@ -125,10 +89,10 @@ class _ManualFeedScreenState extends State<ManualFeedScreen> {
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
               child: LinearProgressIndicator(
-                value: _foodLevel,
+                value: isFoodLow ? 0.0 : 1.0,
                 backgroundColor: Colors.grey[300],
                 valueColor: AlwaysStoppedAnimation<Color>(
-                  _foodLevel > 0.2 ? Colors.black : Colors.red,
+                  isFoodLow ? Colors.red : Colors.black,
                 ),
                 minHeight: 8,
               ),
@@ -152,8 +116,7 @@ class _ManualFeedScreenState extends State<ManualFeedScreen> {
               value: _selectedPortion,
               min: _minPortion,
               max: _maxPortion,
-              divisions:
-                  ((_maxPortion - _minPortion) / 5).toInt(), // Steps of 5g
+              divisions: ((_maxPortion - _minPortion) / 5).toInt(),
               label: '${_selectedPortion.round()} g',
               onChanged: (double value) {
                 setState(() {
@@ -187,47 +150,8 @@ class _ManualFeedScreenState extends State<ManualFeedScreen> {
             ),
             const SizedBox(height: 20),
 
-            // 🔁 Real-time Status Message from Firebase (updated)
-            StreamBuilder<DatabaseEvent>(
-              stream: databaseRef.child('status').onValue,
-              builder: (context, snapshot) {
-                String status = 'Waiting...';
-                if (snapshot.hasData && snapshot.data!.snapshot.value != null) {
-                  status = snapshot.data!.snapshot.value.toString();
-
-                  if (status.toLowerCase().contains("complete")) {
-                    WidgetsBinding.instance.addPostFrameCallback((_) async {
-                      if (_isFeeding) {
-                        setState(() {
-                          _isFeeding = false;
-                          _lastFeedTime = TimeOfDay.now().format(context);
-                        });
-                      }
-
-                      // ✅ Reset the status after showing it
-                      await databaseRef.child('status').set("Ready to feed");
-                    });
-                  }
-                }
-
-                return Text(
-                  status,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: status.toLowerCase().contains("complete")
-                        ? Colors.green[700]
-                        : (status.toLowerCase().contains("started")
-                            ? Colors.blue
-                            : Colors.grey[700]),
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                );
-              },
-            ),
             const Spacer(),
 
-            // Last Feed Time
             if (_lastFeedTime != null)
               Padding(
                 padding: const EdgeInsets.only(bottom: 20.0),
